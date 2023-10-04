@@ -20,8 +20,6 @@ contract BidAuction {
     bool public started;
     bool public ended;
 
-    address public previousHighestBidder;
-    uint256 public previousHighestBid;
     address public highestBidder;
     uint256 public highestBid;
     mapping(address => uint256) public bids;
@@ -48,29 +46,23 @@ contract BidAuction {
     function bid() external payable {
         require(started, "not started");
         require(block.timestamp < endAt, "ended");
-        require(msg.value > highestBid, "value < highest");
 
-        if (highestBidder != address(0)) {
-            bids[highestBidder] += highestBid;
-        }
-        previousHighestBidder = highestBidder;
-        previousHighestBid = highestBid;
+        uint256 bal = bids[msg.sender];
+        require(msg.value + bal > highestBid, "value < highest");
 
         highestBidder = msg.sender;
         highestBid = msg.value;
+        bids[msg.sender] += msg.value;
 
         emit Bid(msg.sender, msg.value);
     }
 
     function withdraw() external {
+        require(msg.sender != highestBidder, "highest bidder can't withdraw");
         uint256 bal = bids[msg.sender];
+        // Don't allow to withdraw if bidder is the highest bidder
         bids[msg.sender] = 0;
         payable(msg.sender).transfer(bal);
-        // If bal was the highest bid, reset highestBidder and highestBid
-        if (msg.sender == highestBidder) {
-            highestBidder = previousHighestBidder;
-            highestBid = previousHighestBid;
-        }
         emit Withdraw(msg.sender, bal);
     }
 
