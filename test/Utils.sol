@@ -17,7 +17,7 @@ contract Utils is Test {
         address payable[] memory users = new address payable[](userNum);
         for (uint256 i = 0; i < userNum; i++) {
             address payable user = this.getNextUserAddress();
-            vm.deal(user, 100 ether);
+            vm.deal(user, 100_000 ether);
             users[i] = user;
         }
 
