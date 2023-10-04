@@ -81,10 +81,10 @@ contract BidAuction is Ownable {
 
         ended = true;
         if (highestBidder != address(0)) {
-            asset.safeTransferFrom(address(this), highestBidder, amount);
+            asset.safeTransfer(highestBidder, amount);
             seller.transfer(highestBid);
         } else {
-            asset.safeTransferFrom(address(this), seller, amount);
+            asset.transfer(seller, amount);
         }
 
         emit End(highestBidder, highestBid);
