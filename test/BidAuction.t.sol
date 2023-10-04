@@ -11,9 +11,10 @@ contract TestBidAuction is Test {
     address payable[] internal users;
     address public alice;
     address public bob;
+    address public basedAdmin;
 
     function _createAuction(uint256 _amount, uint256 _startingBid) internal returns (BidAuction) {
-        BidAuction auction = new BidAuction(address(USDC), _amount, _startingBid);
+        BidAuction auction = new BidAuction(address(USDC), _amount, _startingBid, basedAdmin);
         return auction;
     }
 
@@ -25,6 +26,8 @@ contract TestBidAuction is Test {
         vm.label(alice, "Alice");
         bob = users[1];
         vm.label(bob, "Bob");
+        basedAdmin = users[2];
+        vm.label(basedAdmin, "BasedAdmin");
     }
 
     function testSetupAuction() public {

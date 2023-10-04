@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract BidAuction {
+contract BidAuction is Ownable {
     using SafeERC20 for ERC20;
 
     event Start();
@@ -24,17 +25,20 @@ contract BidAuction {
     uint256 public highestBid;
     mapping(address => uint256) public bids;
 
-    constructor(address _asset, uint256 _amount, uint256 _startingBid) {
+    /// @notice Instantiate auction
+    constructor(address _asset, uint256 _amount, uint256 _startingBid, address _owner) Ownable() {
         asset = ERC20(_asset);
         amount = _amount;
 
-        seller = payable(msg.sender);
+        seller = payable(_owner);
         highestBid = _startingBid;
+        // Transfer ownership to msig or whatever
+        _transferOwnership(_owner);
     }
 
-    function start() external {
+    /// @notice Start auction and transfer asset to contract
+    function start() external onlyOwner {
         require(!started, "started");
-        require(msg.sender == seller, "not seller");
 
         asset.transferFrom(msg.sender, address(this), amount);
         started = true;
@@ -43,6 +47,7 @@ contract BidAuction {
         emit Start();
     }
 
+    /// @notice Bid on auction with ETH
     function bid() external payable {
         require(started, "not started");
         require(block.timestamp < endAt, "ended");
@@ -57,6 +62,7 @@ contract BidAuction {
         emit Bid(msg.sender, msg.value);
     }
 
+    /// @notice Withdraw bid if not highest bidder
     function withdraw() external {
         require(msg.sender != highestBidder, "highest bidder can't withdraw");
         uint256 bal = bids[msg.sender];
@@ -66,6 +72,8 @@ contract BidAuction {
         emit Withdraw(msg.sender, bal);
     }
 
+    /// @notice End auction and transfer asset to highest bidder. If there were no bidders, transfer asset back to
+    /// seller
     function end() external {
         require(started, "not started");
         require(block.timestamp >= endAt, "not ended");
